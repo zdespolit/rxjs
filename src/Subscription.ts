@@ -4,7 +4,30 @@ import {isFunction} from './util/isFunction';
 import {tryCatch} from './util/tryCatch';
 import {errorObject} from './util/errorObject';
 
+// Subscription is an abstract interfaces indicates that "Subscription can have an 'unsubscription callback' and can be unsubscribed from. Also Subscriptions can added/removed to each other."
+// Implementation tells that Subscription conforms to Composite pattern: calling unsubscribe leads to executing of all the unsubscibe callbacks contained in the child subscriptions. 
+
+// Example: 
+
+// Subscription0 <- callback0 <- client
+// - Subscription1 <- callback1 <-|
+// - Subscription2 <- callback2 <-|
+
+//  function client() {
+//    Subscription root = new Subscription(function callback0() { console.log('root callback called back') }) 
+//    root.add(function callback1() { console.log('callback1 called back') })
+//    root.add(function callback2() { console.log('callback2 called back') })
+//    root.unsubscribe()
+//  }
+
+// > root callback called back 
+// > callback1 called back
+// > callback2 called back
+// (Order is implementation-dependent)
+
 export class Subscription {
+  
+  // "Empty" subscription. Why it is "empty"? I only see that it can't be unsubscribed from.  
   public static EMPTY: Subscription = (function(empty: any){
     empty.isUnsubscribed = true;
     return empty;
@@ -69,10 +92,10 @@ export class Subscription {
   }
 
   add(subscription: Subscription | Function | void): void {
-    // return early if:
-    //  1. the subscription is null
-    //  2. we're attempting to add our this
-    //  3. we're attempting to add the static `empty` Subscription
+    // return early if the parameter is: 
+    //  1. null/undefined/0/''
+    //  2. this subscription itself
+    //  3. the static `empty` Subscription
     if (!subscription || (
         subscription === this) || (
         subscription === Subscription.EMPTY)) {
@@ -100,10 +123,10 @@ export class Subscription {
 
   remove(subscription: Subscription): void {
 
-    // return early if:
-    //  1. the subscription is null
-    //  2. we're attempting to remove ourthis
-    //  3. we're attempting to remove the static `empty` Subscription
+    // return early if the parameter is: 
+    //  1. null/undefined/0/''
+    //  2. this subscription itself
+    //  3. the static `empty` Subscription
     if (subscription == null   || (
         subscription === this) || (
         subscription === Subscription.EMPTY)) {
